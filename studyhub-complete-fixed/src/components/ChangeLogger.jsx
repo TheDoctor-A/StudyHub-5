@@ -595,5 +595,5 @@ const ChangeDetailsModal = ({ change, onClose, onUndo, canUndo }) => {
 };
 
 export default ChangeLogger;
-export { useChangeLogger };
+
 
