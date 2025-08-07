@@ -1,4 +1,3 @@
-import LoginPage from './components/LoginPage';
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -24,7 +23,6 @@ import { getAutoSyncService, ContentSyncHelper, AdminSyncHelper } from './servic
 import { universities, courses, subscriptionPlans, adminUsers } from './data/dataModels';
 
 function App() {
-  // Application state
   const [user, setUser] = useState(null);
   const [adminUser, setAdminUser] = useState(null);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
@@ -32,26 +30,22 @@ function App() {
   const [subscription, setSubscription] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Auto-sync service
   const [autoSyncService] = useState(() => getAutoSyncService({
     githubToken: process.env.REACT_APP_GITHUB_TOKEN,
     githubRepo: 'TheDoctor-A/studyhub-Project',
     githubBranch: 'master',
     autoSyncEnabled: true,
-    syncInterval: 30000 // 30 seconds
+    syncInterval: 30000
   }));
 
-  // Sync helpers
   const [contentSyncHelper] = useState(() => new ContentSyncHelper(autoSyncService));
   const [adminSyncHelper] = useState(() => new AdminSyncHelper(autoSyncService));
 
-  // Change logger
   const { logChange, undoChange } = useChangeLogger(
-    adminUser?.id || user?.id, 
+    adminUser?.id || user?.id,
     adminUser?.role || user?.role
   );
 
-  // Load saved state on mount
   useEffect(() => {
     const loadSavedState = () => {
       try {
@@ -61,67 +55,42 @@ function App() {
         const savedCourse = localStorage.getItem('studyhub_course');
         const savedSubscription = localStorage.getItem('studyhub_subscription');
 
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        }
-        if (savedAdminUser) {
-          setAdminUser(JSON.parse(savedAdminUser));
-        }
-        if (savedUniversity) {
-          setSelectedUniversity(JSON.parse(savedUniversity));
-        }
-        if (savedCourse) {
-          setSelectedCourse(JSON.parse(savedCourse));
-        }
-        if (savedSubscription) {
-          setSubscription(JSON.parse(savedSubscription));
-        }
+        if (savedUser) setUser(JSON.parse(savedUser));
+        if (savedAdminUser) setAdminUser(JSON.parse(savedAdminUser));
+        if (savedUniversity) setSelectedUniversity(JSON.parse(savedUniversity));
+        if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
+        if (savedSubscription) setSubscription(JSON.parse(savedSubscription));
       } catch (error) {
         console.error('Error loading saved state:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadSavedState();
   }, []);
 
-  // Save state changes
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('studyhub_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('studyhub_user');
-    }
+    if (user) localStorage.setItem('studyhub_user', JSON.stringify(user));
+    else localStorage.removeItem('studyhub_user');
   }, [user]);
 
   useEffect(() => {
-    if (adminUser) {
-      localStorage.setItem('studyhub_admin_user', JSON.stringify(adminUser));
-    } else {
-      localStorage.removeItem('studyhub_admin_user');
-    }
+    if (adminUser) localStorage.setItem('studyhub_admin_user', JSON.stringify(adminUser));
+    else localStorage.removeItem('studyhub_admin_user');
   }, [adminUser]);
 
   useEffect(() => {
-    if (selectedUniversity) {
-      localStorage.setItem('studyhub_university', JSON.stringify(selectedUniversity));
-    }
+    if (selectedUniversity) localStorage.setItem('studyhub_university', JSON.stringify(selectedUniversity));
   }, [selectedUniversity]);
 
   useEffect(() => {
-    if (selectedCourse) {
-      localStorage.setItem('studyhub_course', JSON.stringify(selectedCourse));
-    }
+    if (selectedCourse) localStorage.setItem('studyhub_course', JSON.stringify(selectedCourse));
   }, [selectedCourse]);
 
   useEffect(() => {
-    if (subscription) {
-      localStorage.setItem('studyhub_subscription', JSON.stringify(subscription));
-    }
+    if (subscription) localStorage.setItem('studyhub_subscription', JSON.stringify(subscription));
   }, [subscription]);
 
-  // Authentication handlers
   const handleLogin = (userData) => {
     setUser(userData);
     logChange({
@@ -183,7 +152,6 @@ function App() {
     setAdminUser(null);
   };
 
-  // Registration handler
   const handleRegister = (userData) => {
     setUser(userData);
     logChange({
@@ -198,7 +166,6 @@ function App() {
     });
   };
 
-  // University selection handler
   const handleUniversitySelect = (university) => {
     setSelectedUniversity(university);
     logChange({
@@ -214,7 +181,6 @@ function App() {
     });
   };
 
-  // Course selection handler
   const handleCourseSelect = (course) => {
     setSelectedCourse(course);
     logChange({
@@ -230,7 +196,6 @@ function App() {
     });
   };
 
-  // Subscription handler
   const handleSubscription = (subscriptionData) => {
     setSubscription(subscriptionData);
     logChange({
@@ -246,10 +211,8 @@ function App() {
     });
   };
 
-  // Content change handler
   const handleContentChange = (contentData) => {
     if (selectedUniversity && selectedCourse) {
-      // Sync content changes
       contentSyncHelper.syncContentStructure(
         selectedUniversity.id,
         selectedCourse.id,
@@ -271,11 +234,9 @@ function App() {
     }
   };
 
-  // Undo handler
   const handleUndo = async (change, undoData) => {
     try {
       if (change.type === 'content' && undoData.contentData) {
-        // Restore previous content
         if (selectedUniversity && selectedCourse) {
           contentSyncHelper.syncContentStructure(
             selectedUniversity.id,
@@ -284,13 +245,11 @@ function App() {
           );
         }
       }
-      // Add more undo handlers for different change types as needed
     } catch (error) {
       console.error('Undo failed:', error);
     }
   };
 
-  // Protected route component
   const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) => {
     if (requireAdmin && !adminUser) {
       return <Navigate to="/admin/login" replace />;
@@ -301,7 +260,6 @@ function App() {
     return children;
   };
 
-  // Loading screen
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -317,153 +275,25 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
-          <Route 
-            path="/university" 
-            element={
-              <UniversitySelection 
-                universities={universities}
-                onSelect={handleUniversitySelect}
-                selected={selectedUniversity}
-              />
-            } 
-          />
-          <Route 
-            path="/course" 
-            element={
-              <CourseSelection 
-                courses={courses}
-                university={selectedUniversity}
-                onSelect={handleCourseSelect}
-                selected={selectedCourse}
-              />
-            } 
-          />
-          <Route 
-            path="/subscription" 
-            element={
-              <SubscriptionPlans 
-                plans={subscriptionPlans}
-                university={selectedUniversity}
-                course={selectedCourse}
-              />
-            } 
-          />
-          <Route 
-            path="/payment" 
-            element={
-              <PaymentPage 
-                university={selectedUniversity}
-                course={selectedCourse}
-                onSubscribe={handleSubscription}
-              />
-            } 
-          />
-          <Route 
-            path="/login" 
-            element={<LoginPage onLogin={handleLogin} />} 
-          />
-          <Route 
-            path="/register" 
-            element={<RegisterPage onRegister={handleRegister} />} 
-          />
-
-          {/* Protected User Routes */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard 
-                  user={user}
-                  university={selectedUniversity}
-                  course={selectedCourse}
-                  subscription={subscription}
-                  onLogout={handleLogout}
-                />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Admin Routes */}
-          <Route 
-            path="/admin/login" 
-            element={<AdminLogin onLogin={handleAdminLogin} />} 
-          />
-          <Route 
-            path="/admin/*" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <AdminSystem 
-                  currentUser={adminUser}
-                  onLogout={handleAdminLogout}
-                />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Content Management Route */}
-          <Route 
-            path="/admin/content-manager" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <div className="min-h-screen bg-gray-50">
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <ContentManager
-                      universityId={selectedUniversity?.id || 'university-of-reading'}
-                      courseId={selectedCourse?.id || 'mpharm'}
-                      userRole={adminUser?.role}
-                      onContentChange={handleContentChange}
-                    />
-                  </div>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Change Logger Route */}
-          <Route 
-            path="/admin/change-history" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <div className="min-h-screen bg-gray-50">
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <ChangeLogger
-                      currentUser={adminUser}
-                      onUndo={handleUndo}
-                    />
-                  </div>
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Catch all route */}
+          <Route path="/university" element={<UniversitySelection universities={universities} onSelect={handleUniversitySelect} selected={selectedUniversity} />} />
+          <Route path="/course" element={<CourseSelection courses={courses} university={selectedUniversity} onSelect={handleCourseSelect} selected={selectedCourse} />} />
+          <Route path="/subscription" element={<SubscriptionPlans plans={subscriptionPlans} university={selectedUniversity} course={selectedCourse} />} />
+          <Route path="/payment" element={<PaymentPage university={selectedUniversity} course={selectedCourse} onSubscribe={handleSubscription} />} />
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="/register" element={<RegisterPage onRegister={handleRegister} />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard user={user} university={selectedUniversity} course={selectedCourse} subscription={subscription} onLogout={handleLogout} /></ProtectedRoute>} />
+          <Route path="/admin/login" element={<AdminLogin onLogin={handleAdminLogin} />} />
+          <Route path="/admin/*" element={<ProtectedRoute requireAdmin={true}><AdminSystem currentUser={adminUser} onLogout={handleAdminLogout} /></ProtectedRoute>} />
+          <Route path="/admin/content-manager" element={<ProtectedRoute requireAdmin={true}><div className="min-h-screen bg-gray-50"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ContentManager universityId={selectedUniversity?.id || 'university-of-reading'} courseId={selectedCourse?.id || 'mpharm'} userRole={adminUser?.role} onContentChange={handleContentChange} /></div></div></ProtectedRoute>} />
+          <Route path="/admin/change-history" element={<ProtectedRoute requireAdmin={true}><div className="min-h-screen bg-gray-50"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><ChangeLogger currentUser={adminUser} onUndo={handleUndo} /></div></div></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
-        {/* Toast notifications */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              theme: {
-                primary: 'green',
-                secondary: 'black',
-              },
-            },
-          }}
-        />
+        <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: '#363636', color: '#fff' }, success: { duration: 3000, theme: { primary: 'green', secondary: 'black' } } }} />
       </div>
     </Router>
   );
 }
 
 export default App;
-
